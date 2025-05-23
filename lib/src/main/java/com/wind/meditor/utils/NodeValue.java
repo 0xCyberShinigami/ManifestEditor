@@ -23,6 +23,19 @@ public final class NodeValue {
         public static final String PACKAGE="package";
     }
 
+    public static final class Queries {
+    public static final String TAG_NAME = "queries";
+    
+    public static final class Intent {
+        public static final String TAG_NAME = "intent";
+        
+        public static final class Action {
+            public static final String TAG_NAME = "action";
+            public static final String NAME = "name";
+        }
+    }
+}
+    
     public static final class UsesSDK{
         public static final String TAG_NAME = "uses-sdk";
 
