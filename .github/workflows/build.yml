@@ -1,0 +1,90 @@
+name: Build and Release
+
+on: 
+  push:
+    tags:
+      - 'v*'
+  # Also trigger on pushes to main branch for artifact building
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Init
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          echo "FILE_NAME=./lib/build/libs/ManifestEditor-${GITHUB_REF_NAME#v}.jar" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=ManifestEditor-${GITHUB_REF_NAME#v}.jar" >> $GITHUB_ENV
+          echo "IS_RELEASE=true" >> $GITHUB_ENV
+        else
+          echo "FILE_NAME=./lib/build/libs/ManifestEditor-2.0.jar" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=ManifestEditor-2.0.jar" >> $GITHUB_ENV
+          echo "IS_RELEASE=false" >> $GITHUB_ENV
+        fi
+        
+    - name: Checkout Repo
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: 8
+        
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: 5.4
+        
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+      
+    - name: Build with Gradle
+      run: ./gradlew clean build
+      
+    - name: Verify JAR exists
+      run: |
+        echo "Looking for JAR file: ${{ env.FILE_NAME }}"
+        ls -la ./lib/build/libs/
+        if [ ! -f "${{ env.FILE_NAME }}" ]; then
+          echo "JAR file not found at expected location"
+          exit 1
+        fi
+        
+    - name: Upload JAR as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ env.FILE_NAME }}
+        retention-days: 30
+        
+    - name: Create Release (only for tags)
+      if: env.IS_RELEASE == 'true'
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: ${{ env.FILE_NAME }}
+        artifactContentType: "application/java-archive"
+        artifactErrorsFailBuild: true
+        generateReleaseNotes: true
+        makeLatest: "latest"
+        name: "Release ${{ github.ref_name }}"
+        body: |
+          ## Changes in ${{ github.ref_name }}
+          
+          **Download the JAR file:**
+          - [ManifestEditor JAR](${{ env.FILE_NAME }})
+          
+          **Usage:**
+          ```bash
+          java -jar ${{ env.ARTIFACT_NAME }} --help
+          ```
+          
+          Auto-generated release notes are provided below.
