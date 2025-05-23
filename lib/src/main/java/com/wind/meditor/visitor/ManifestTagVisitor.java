@@ -11,6 +11,8 @@ import pxb.android.axml.NodeVisitor;
 
 public class ManifestTagVisitor extends ModifyAttributeVisitor {
 
+    private boolean hasQueriesTag = false;
+
     private ModificationProperty properties;
 
     private List<String> hasIncludedUsesPermissionList = new ArrayList<>();
@@ -38,6 +40,16 @@ public class ManifestTagVisitor extends ModifyAttributeVisitor {
                     properties.getPermissionMapper(), properties.getAuthorityMapper());
         }
 
+        if (NodeValue.Queries.TAG_NAME.equals(name)) {
+            hasQueriesTag = true;
+            NodeVisitor child = super.child(ns, name);
+            QueriesProperty queriesProperty = properties.getQueriesProperty();
+            if (queriesProperty != null && !queriesProperty.getIntents().isEmpty()) {
+                return new QueriesTagVisitor(child, null);
+            }
+            return child;
+        }
+        
         if (NodeValue.UsesSDK.TAG_NAME.equals(name)) {
             return new ModifyAttributeVisitor(child, properties.getUsesSdkAttributeList());
         }
@@ -61,6 +73,17 @@ public class ManifestTagVisitor extends ModifyAttributeVisitor {
 
     @Override
     public void end() {
+        // Add queries tag if it doesn't exist but we have queries to add
+        QueriesProperty queriesProperty = properties.getQueriesProperty();
+        if (!hasQueriesTag && queriesProperty != null && !queriesProperty.getIntents().isEmpty()) {
+            NodeVisitor queriesChild = super.child(null, NodeValue.Queries.TAG_NAME);
+            QueriesTagVisitor queriesVisitor = new QueriesTagVisitor(queriesChild, null);
+            for (QueriesProperty.Intent intent : queriesProperty.getIntents()) {
+                new QueriesTagVisitor(queriesChild, intent).end();
+            }
+            queriesVisitor.end();
+        }
+        
         List<String> list = properties.getUsesPermissionList();
         if (list != null && list.size() > 0) {
             for (String permissionName : list) {
