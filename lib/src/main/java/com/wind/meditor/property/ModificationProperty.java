@@ -21,6 +21,26 @@ public class ModificationProperty {
     private PermissionMapper permissionMapper;
     private AttributeMapper<String> providerAuthorityMapper;
 
+    private QueriesProperty queriesProperty;
+
+    public QueriesProperty getQueriesProperty() {
+        return queriesProperty;
+    }
+    
+    public ModificationProperty setQueriesProperty(QueriesProperty queriesProperty) {
+        this.queriesProperty = queriesProperty;
+        return this;
+    }
+    
+    public ModificationProperty addQueriesIntent(QueriesProperty.Intent intent) {
+        if (queriesProperty == null) {
+            queriesProperty = new QueriesProperty();
+        }
+        queriesProperty.addIntent(intent);
+        return this;
+    }
+    
+
     public List<String> getUsesPermissionList() {
         return usesPermissionList;
     }
