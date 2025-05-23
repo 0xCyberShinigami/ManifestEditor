@@ -78,6 +78,10 @@ public class ManifestEditorMain extends BaseCommand {
             ", multi option is supported", argName = "uses-sdk-attribute-name-value")
     private List<String> usesSdkAttributeList = new ArrayList<>();
 
+    @Opt(opt = "qi", longOpt = "queriesIntent", description = "add queries intent action, " +
+            "format: action-name, multi option is supported", argName = "queries-intent-action")
+    private List<String> queriesIntentActions = new ArrayList<>();
+
     @Opt(opt = "md", longOpt = "metaData", description = "add the meta data, " +
             " name and value should be separated by " + MULTI_NAME_SEPERATER +
             ", multi option is supported", argName = "meta-data-name-value")
@@ -272,6 +276,16 @@ public class ManifestEditorMain extends BaseCommand {
 
         for (String metaData : deleteMetaDataList) {
             property.addDeleteMetaData(metaData);
+        }
+
+        if (!queriesIntentActions.isEmpty()) {
+            QueriesProperty queriesProperty = new QueriesProperty();
+            for (String actionName : queriesIntentActions) {
+                QueriesProperty.Intent intent = new QueriesProperty.Intent();
+                intent.addAction(actionName.trim());
+                queriesProperty.addIntent(intent);
+            }
+            property.setQueriesProperty(queriesProperty);
         }
 
 //        property.addManifestAttribute(new AttributeItem(NodeValue.Manifest.PACKAGE, "wind.new.pkg.name111").setNamespace(null))
